@@ -1,0 +1,9 @@
+create or replace function nzn() RETURNS text AS
+$$
+msg = 'whut?'
+for row in plpy.cursor("SELECT * FROM friends.test"):
+	msg += row['firstname'] + row['lastname']
+	msg += '\n'
+return msg
+$$ LANGUAGE plpython3u;
+select nzn();
