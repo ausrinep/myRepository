@@ -1,0 +1,71 @@
+CREATE OR REPLACE FUNCTION friends.send_mail()
+  RETURNS text AS
+$BODY$
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+gmail_user='@gmail.com'
+gmail_pwd = ''
+receiver_email = ""
+
+message = MIMEMultipart("alternative")
+message["Subject"] = "multipart test"
+message["From"] = gmail_user
+message["To"] = receiver_email
+
+#FROM = 'apeneviciute@gmail.com'
+#TO = ['ausrine.peneviciute@ktu.edu']
+#SUBJECT = "SMTP e-mail test"
+#TEXT = "testing smtp"
+# Prepare actual message
+
+
+#message = """From: %s\nTo: %s\nSubject: %s\n\n%s
+#""" % (FROM, ", ".join(TO), SUBJECT, TEXT)
+
+text = """\
+Hi,
+How are you?
+Real Python has many great tutorials:
+www.realpython.com"""
+html = """\
+<html>
+  <body>
+    <p>Hi,<br>
+       How are you?<br>
+       <a href="http://www.realpython.com">Real Python</a> 
+       has many great tutorials.
+    </p>
+    <table style="width:100%"><tr><th>FirstName</th><th>LastName</th></tr>
+"""
+
+for row in plpy.cursor("select * from friends.test"):
+	text += row['firstname']
+	html += """<tr><td>""" + row['firstname'] + """</td><td>"""  + row['lastname'] + """</td></tr>""" 
+html += """ </table></body>
+</html>"""
+
+part1 = MIMEText(text, "plain")
+part2 = MIMEText(html, "html")
+
+message.attach(part1)
+message.attach(part2)
+
+try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.ehlo()
+        server.starttls()
+        server.login(gmail_user, gmail_pwd)
+        server.sendmail(gmail_user, receiver_email, message.as_string())
+        server.close()
+        return 'successfully sent the mail'
+except:
+        return "failed to send mail"
+        $BODY$
+  LANGUAGE plpython3u VOLATILE
+  COST 100;
+ALTER FUNCTION public.send_mail()
+  OWNER TO postgres;
+
+  select friends.send_mail();
